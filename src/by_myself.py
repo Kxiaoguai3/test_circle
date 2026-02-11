@@ -1,4 +1,7 @@
 '''
+作者：夏月华
+
+
 by_myself 的 Docstring
 
 通过自己理解，写一个packing circle的程序。
@@ -206,8 +209,8 @@ def packing_circle(circles: List[Circle]) -> float:
                 print(f"id:{new_circle.id} 超时！")
                 break
         print(f"id:{new_circle.id}完成")
-        
-             
+
+
 
             
 
