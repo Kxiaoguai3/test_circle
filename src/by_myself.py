@@ -37,6 +37,8 @@ class Node:
         self.prev = None
         self.next = None
 
+               
+
 '''随机圆生成器'''
 def random_circle(n: int, r_min: float, r_max: float) -> List[Circle]:
     """随机生成n个半径在r_min和r_max之间的圆"""
@@ -71,6 +73,7 @@ def update_list(node: Node, circle: Circle) -> Node:
 
 '''通过两个圆，计算第三个相切圆'''
 def place_circle(b: Circle, a: Circle, c: Circle):
+    print(f"计算 id:{c.id} 的位置，已知 id:{a.id} 和 id:{b.id} 的位置")
     """根据两个已知圆的位置，计算第三个相切圆的位置"""
     dx = b.x - a.x
     dy = b.y - a.y
@@ -110,15 +113,19 @@ def check_list(a_node:Node, b_node:Node, circle:Circle) -> Tuple[Node, Node, boo
     tmp_a = a_node.prev
     tmp_b = b_node.next
     while True:
-        if not circles_intersect(tmp_a.circle, circle):
-            tmp_a = a_node.prev
-        else:
+        if circles_intersect(tmp_a.circle, circle):
+            print(f"id:{circle.id} 与 id:{tmp_a.circle.id} 相交！")
             return tmp_a, b_node, True
-            
-        if not circles_intersect(tmp_b.circle, circle):
-            tmp_b = b_node.next
         else:
+            tmp_a = tmp_a.prev
+            
+            
+        if circles_intersect(tmp_b.circle, circle):
+            print(f"id:{circle.id} 与 id:{tmp_b.circle.id} 相交！")
             return a_node, tmp_b, True
+        else:
+            tmp_b = tmp_b.next
+            
             
         if tmp_a == a_node or tmp_b == b_node:
             return a_node, b_node, False
@@ -143,9 +150,10 @@ def best_sore(start_node: Node) -> Tuple[Node, Node]:
     return best_node, best_node.next
 
 '''packing circle 算法，主要函数'''
-def packing_circle(circles: List[Circle]) -> float:
+def packing_circle(circles: List[Circle]):
     """packing circle算法，打包n个圆"""
     n = len(circles)
+    print(f"开始 packing {n} 个圆...")
     if n == 0:
         return 0.0
     
@@ -174,6 +182,9 @@ def packing_circle(circles: List[Circle]) -> float:
     a_node = Node(a)
     b_node = Node(b)
     c_node = Node(c)
+    global headNode
+    headNode = a_node
+    ansList = [a, b, c]
 
     a_node.next = b_node
     a_node.prev = c_node
@@ -197,9 +208,11 @@ def packing_circle(circles: List[Circle]) -> float:
 
         # 遍历链表，查看新圆是否有相交
         current_a, current_b, inserted = check_list(current_a, current_b, new_circle)
-        if inserted:
+        if not inserted:
             update_list(current_a, new_circle)
+            ansList.append(new_circle)
         else:
+            print(f"重新计算 id:{new_circle.id} 的位置...")
             # 尝试新的圆对，只到成功为止,并且记录是否超时，超时则警告，然后退出
             start_time = time.time()
             while inserted:
@@ -209,7 +222,10 @@ def packing_circle(circles: List[Circle]) -> float:
                if now_time - start_time > 10:
                 print(f"id:{new_circle.id} 超时！")
                 break
+            update_list(current_a, new_circle)
+            ansList.append(new_circle)
         print(f"id:{new_circle.id}完成")
+    return ansList
 
 
 '''绘制函数'''
@@ -367,9 +383,15 @@ def draw_circles(circles: List[Circle],
 
 def main():
     # 随机生成10个半径在0.5到1.5之间的圆
-    circles = random_circle(10, 1, 10)
+    circles = random_circle(10, 0.2, 2)
     # 执行packing circle算法
-    packing_circle(circles)
+    ansList = packing_circle(circles)
+
+    nodesCircle = []
+    flagNode = headNode
+    while headNode != flagNode:
+        nodesCircle.append(flagNode.circle)
+        flagNode = flagNode.next
 
     # for circle in circles:
     #     l = [circle]
@@ -381,7 +403,7 @@ def main():
     #     draw_circles(l)
 
     # 绘制
-    draw_circles(circles)
+    draw_circles(ansList)
 
 
 if __name__ == "__main__":
