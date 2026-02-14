@@ -20,6 +20,7 @@ from typing import List, Dict, Tuple, Optional
 import random
 import math
 import time
+import keyboard
 
 class Circle:
     """圆类，存储圆心坐标和半径"""
@@ -211,7 +212,180 @@ def packing_circle(circles: List[Circle]) -> float:
         print(f"id:{new_circle.id}完成")
 
 
+'''绘制函数'''
+def draw_circles(circles: List[Circle], 
+                 title: str = "Circle Packing Result",
+                 figsize: tuple = (10, 10),
+                 show_center: bool = False,
+                 show_id: bool = True,
+                 show_bounding: bool = False,
+                 save_path: str = None,
+                 wait_for_key: bool = False):
+    """
+    简单的圆环绘制函数，原点在画布中心
+    
+    Parameters:
+    -----------
+    circles: List[Circle] - 要绘制的圆列表
+    title: str - 图表标题
+    figsize: tuple - 画布大小
+    show_center: bool - 是否显示圆心
+    show_id: bool - 是否显示圆ID
+    show_bounding: bool - 是否显示外接圆
+    save_path: str - 保存路径
+    wait_for_key: bool - 是否等待按键后关闭
+    """
+    
+    # 创建画布，设置原点在中心
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_aspect('equal')
+    
+    # 设置坐标轴，原点在中心
+    ax.spines['left'].set_position('center')
+    ax.spines['bottom'].set_position('center')
+    ax.spines['right'].set_color('none')
+    ax.spines['top'].set_color('none')
+    
+    # 绘制坐标轴箭头
+    ax.plot(1, 0, '>k', transform=ax.get_yaxis_transform(), clip_on=False)
+    ax.plot(0, 1, '^k', transform=ax.get_xaxis_transform(), clip_on=False)
+    
+    # 添加网格
+    ax.grid(True, linestyle='--', alpha=0.6)
+    
+    # 为圆生成颜色（使用tab10配色，简单清晰）
+    colors = plt.cm.tab10(np.linspace(0, 1, len(circles)))
+    
+    # 绘制所有圆
+    max_x = 0
+    max_y = 0
+    max_r = 0
+    
+    for i, circle in enumerate(circles):
+        # 绘制圆
+        patch = mpatches.Circle(
+            (circle.x, circle.y), 
+            circle.r,
+            facecolor=colors[i],
+            edgecolor='black',
+            alpha=0.7,
+            linewidth=1.5
+        )
+        ax.add_patch(patch)
+        
+        # 更新边界
+        max_x = max(max_x, abs(circle.x) + circle.r)
+        max_y = max(max_y, abs(circle.y) + circle.r)
+        max_r = max(max_r, circle.r)
+        
+        # 显示圆心
+        if show_center:
+            ax.plot(circle.x, circle.y, 'k+', markersize=8)
+        
+        # 显示圆ID
+        if show_id:
+            ax.text(
+                circle.x, circle.y, 
+                f'{circle.id}', 
+                fontsize=10, 
+                ha='center', 
+                va='center',
+                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8)
+            )
+    
+    # 绘制外接圆
+    if show_bounding and len(circles) > 0:
+        # 计算外接圆心
+        center_x = sum(c.x for c in circles) / len(circles)
+        center_y = sum(c.y for c in circles) / len(circles)
+        
+        # 计算外接圆半径
+        bounding_r = 0
+        for circle in circles:
+            distance = np.sqrt((circle.x - center_x)**2 + (circle.y - center_y)**2) + circle.r
+            bounding_r = max(bounding_r, distance)
+        
+        # 绘制外接圆
+        bounding_patch = mpatches.Circle(
+            (center_x, center_y),
+            bounding_r,
+            facecolor='none',
+            edgecolor='red',
+            linestyle='--',
+            linewidth=2,
+            alpha=0.5
+        )
+        ax.add_patch(bounding_patch)
+        
+        # 计算并显示填充密度
+        total_area = sum(np.pi * c.r * c.r for c in circles)
+        bounding_area = np.pi * bounding_r * bounding_r
+        density = total_area / bounding_area
+        
+        # 在右上角显示统计信息
+        ax.text(0.95, 0.95, 
+                f'Circles: {len(circles)}\nDensity: {density:.3f}',
+                transform=ax.transAxes,
+                fontsize=10,
+                verticalalignment='top',
+                horizontalalignment='right',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+    
+    # 设置坐标轴范围
+    margin = max_r * 0.5
+    limit = max(max_x, max_y) + margin
+    ax.set_xlim(-limit, limit)
+    ax.set_ylim(-limit, limit)
+    
+    # 设置标题和标签
+    ax.set_title(title, fontsize=14, pad=20)
+    ax.set_xlabel('X', fontsize=12)
+    ax.set_ylabel('Y', fontsize=12)
+    
+    # 等比例显示
+    plt.tight_layout()
+    
+    # 保存或显示
+    if save_path:
+        plt.savefig(save_path, dpi=100, bbox_inches='tight')
+        print(f"图片已保存到: {save_path}")
+    
+     # 显示图像
+    plt.show(block=False)  # 非阻塞显示
+    
+    if wait_for_key:
+        print(f"按 N 键继续下一张图... (当前: {title})")
+        while True:
+            if keyboard.is_pressed('n'):
+                plt.close()
+                print("加载下一张图...")
+                break
+            plt.pause(0.1)  # 避免CPU过载
+    else:
+        plt.show()  # 阻塞显示
 
+
+def main():
+    # 随机生成10个半径在0.5到1.5之间的圆
+    circles = random_circle(10, 1, 10)
+    # 执行packing circle算法
+    packing_circle(circles)
+
+    # for circle in circles:
+    #     l = [circle]
+
+    #     while not keyboard.is_pressed('n'):
+    #         time.sleep(0.5)
+    #     print("绘制下一张图片")
+
+    #     draw_circles(l)
+
+    # 绘制
+    draw_circles(circles)
+
+
+if __name__ == "__main__":
+    main()
             
 
             
