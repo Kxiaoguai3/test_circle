@@ -135,145 +135,7 @@ class Bucket:
     
     def __repr__(self):
         return f"桶 {self.category} [0, {self.tim[-1].border:.2f}], 总数据量={self.total_data_count},数据队列={self.tim}\n\n"
-    
-class BucketManager:
-    """
-    桶管理器：负责将数据分桶、管理所有桶
-    """
-    
-    def __init__(self, bucket_width: float = 2.0, dummy_radius: float = 0.5):
-        """
-        初始化桶管理器
-        
-        Args:
-            bucket_width: 每个桶的宽度
-            dummy_radius: 占位节点的固定半径
-        """
-        self.bucket_width = bucket_width
-        self.dummy_radius = dummy_radius
-        self.buckets: Dict[int, Bucket] = {}  # key: bucket_index
-        self.category_order: List[str] = []   # 类别优先级顺序
-        
-        # 全局统计
-        self.min_x = float('inf')
-        self.max_x = float('-inf')
-    
-    def _get_bucket_index(self, x: float) -> int:
-        """根据X坐标获取桶索引"""
-        return int(math.floor(x / self.bucket_width))
-    
-    def _get_or_create_bucket(self, x: float) -> Bucket:
-        """获取或创建桶"""
-        idx = self._get_bucket_index(x)
-        if idx not in self.buckets:
-            x_min = idx * self.bucket_width
-            x_max = x_min + self.bucket_width
-            self.buckets[idx] = Bucket(x_min, x_max, self.dummy_radius)
-            print(f"  创建桶 {idx}: [{x_min:.2f}, {x_max:.2f}]")
-        return self.buckets[idx]
-    
-    def binning_data(self, circles: List[Circle]) -> None:
-        """
-        将数据分桶
-        
-        Args:
-            circles: 所有原始数据圆（未放置）
-        """
-        print("\n" + "="*50)
-        print("Step 3: 分桶逻辑 (Binning)")
-        print("="*50)
-        
-        if not circles:
-            print("  没有数据需要分桶")
-            return
-        
-        # 计算数据的X范围（假设数据有初始x值，或者用其他特征如时间戳）
-        # 这里简单使用id作为x的代理，实际应根据你的数据特征调整
-        x_values = [c.id for c in circles]  # 示例：用id作为x坐标
-        self.min_x = min(x_values)
-        self.max_x = max(x_values)
-        
-        print(f"数据X范围: [{self.min_x:.2f}, {self.max_x:.2f}]")
-        print(f"桶宽度: {self.bucket_width}")
-        print(f"预计桶数量: {math.ceil((self.max_x - self.min_x) / self.bucket_width) + 1}")
-        
-        # 将每个圆放入对应的桶
-        for circle in circles:
-            # 假设每个圆有初始x坐标（可以是类别对应的位置）
-            # 这里简单用id作为x坐标
-            x_pos = circle.id * 0.5  # 示例：根据id分散
-            bucket = self._get_or_create_bucket(x_pos)
-            bucket.add_data_circle(circle)
-        
-        # 打印分桶结果
-        print(f"\n分桶完成，共创建 {len(self.buckets)} 个桶:")
-        for idx in sorted(self.buckets.keys()):
-            bucket = self.buckets[idx]
-            print(f"  桶 {idx}: {bucket}")
-    
-    def set_category_order(self, order: List[str]):
-        """设置类别优先级顺序"""
-        self.category_order = order
-        print(f"\n设置类别优先级: {order}")
-        
-        # 对所有桶按新顺序排序
-        for bucket in self.buckets.values():
-            bucket.sort_by_category(order)
-    
-    def get_bucket_by_x(self, x: float) -> Bucket:
-        """根据X坐标获取对应的桶"""
-        idx = self._get_bucket_index(x)
-        if idx in self.buckets:
-            return self.buckets[idx]
-        else:
-            # 如果找不到，返回最近的桶
-            if self.buckets:
-                closest_idx = min(self.buckets.keys(), key=lambda i: abs(i - idx))
-                print(f"  警告: 桶 {idx} 不存在，使用最近的桶 {closest_idx}")
-                return self.buckets[closest_idx]
-            else:
-                raise ValueError("没有可用的桶")
-    
-    def get_next_circle_for_position(self, x: float) -> Circle:
-        """
-        获取指定位置的下一个要放置的圆
-        
-        Args:
-            x: 当前位置的X坐标
-        
-        Returns:
-            Circle: 要放置的圆
-        """
-        bucket = self.get_bucket_by_x(x)
-        return bucket.get_next_circle(x)
-    
-    def print_bucket_stats(self):
-        """打印所有桶的统计信息"""
-        print("\n" + "="*50)
-        print("桶统计信息:")
-        print("="*50)
-        
-        total_data = 0
-        total_placed = 0
-        total_remaining = 0
-        total_dummy = 0
-        
-        for idx in sorted(self.buckets.keys()):
-            bucket = self.buckets[idx]
-            stats = bucket.get_stats()
-            print(f"桶 {idx}: {bucket}")
-            print(f"  范围: [{stats['x_range'][0]:.2f}, {stats['x_range'][1]:.2f}]")
-            print(f"  数据: 总计={stats['total_data']}, 已放置={stats['placed_data']}, 剩余={stats['remaining']}")
-            print(f"  占位节点: {stats['dummy_count']}")
-            
-            total_data += stats['total_data']
-            total_placed += stats['placed_data']
-            total_remaining += stats['remaining']
-            total_dummy += stats['dummy_count']
-        
-        print("-"*30)
-        print(f"总计: 数据={total_data}, 已放置={total_placed}, 剩余={total_remaining}, 占位={total_dummy}")
-               
+                  
 class FrontChain:
     """
     前链类：封装双向链表，管理所有已放置的节点
@@ -577,31 +439,6 @@ def random_circle(n: int, r_min: float, r_max: float) -> List[Circle]:
         r = random.uniform(r_min, r_max)
         circles.append(Circle(r=r, id=i))
     return circles
-
-
-'''计算圆对的得分,这个算法中暂时用不上
-def score(node: Node):
-    a = node.circle
-    b = node.next.circle
-    ab = a.r + b.r
-    dx = (a.x * b.r + b.x * a.r) / ab
-    dy = (a.y * b.r + b.y * a.r) / ab
-    return dx * dx + dy * dy
-'''
-'''更新链表，暂时用不上
-def update_list(node: Node, circle: Circle) -> Node:
-    """更新链表，将circle插入到node之后"""
-    a = node
-    b = node.next
-    p = Node(circle)
-
-    a.next = p
-    p.prev = a
-    p.next = b
-    b.prev = p
-
-    return p
-'''
     
 '''通过两个圆，计算第三个相切圆,计算出来的圆出现在向量ab的左侧'''
 def place_circle(b: Circle, a: Circle, c: Circle):
@@ -902,11 +739,6 @@ def packing_circle(user_circles: List[Circle],
 
                     
     return bucket_list
-
-
-
-    
-
 
 def draw_circles(buckets: List[Bucket], 
                  title: str = "Circle Packing Result",
