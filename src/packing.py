@@ -24,11 +24,11 @@ import keyboard
 from enum import Enum
 
 class Category(Enum):
-    USER = 1,
-    MEDIA = 2,
-    EXPERT = 3,
-    UNKOWN = 0
 
+    USER = 1
+    MEDIA = 2
+    EXPERT = 3
+    UNKOWN = 0
 
 class Circle:
     """圆类，存储圆心坐标和半径"""
@@ -49,6 +49,9 @@ class Circle:
         self.tim = tim
         self.is_placeholder = is_placeholder
 
+    def __repr__(self):
+        return f"\n圆 {self.id}: ({self.x:.2f}, {self.y:.2f}), r={self.r:.2f}, 类别={self.category}, 时间={self.tim:.2f}"
+
 class Node:
     """双向链表节点类"""
     def __init__(self, circle: Circle):
@@ -58,10 +61,13 @@ class Node:
 
 class Tim:
     '''时间类，将圆按照时间划分，装入类的data中'''
-    def __init__(self, name: str, tim: float, data: List = [Circle], border: float = 0.0):
+    def __init__(self, name: str, data: List = [Circle], border: float = 0.0):
         self.name = name
         self.data = data
         self.border = border
+
+    def __repr__(self):
+        return f"\n{self.name}: 数量={len(self.data)}，数据={self.data}"
 
 class Bucket:
     '''桶类：根据X坐标(time)范围管理一堆Node
@@ -128,15 +134,8 @@ class Bucket:
         """获取剩余数据节点数量"""
         return len(self.data_queue)
     
-    def get_stats(self) -> dict:
-        """获取桶的统计信息"""
-        return {
-            'x_range': (self.x_min, self.x_max),
-            'total_data': self.total_data_count,
-            'placed_data': self.placed_data_count,
-            'remaining': len(self.data_queue),
-            'dummy_count': self.dummy_count
-        }
+    def __repr__(self):
+        return f"桶 {self.category} [0, {self.tim[-1].border:.2f}], 总数据量={self.total_data_count},数据队列={self.tim}\n\n"
     
 class BucketManager:
     """
@@ -611,8 +610,46 @@ def circles_intersect(a: Circle, b: Circle) -> bool:
 def packing_circle(user_circles: List[Circle], 
                    media_circles: List[Circle], 
                    expert_circles: List[Circle]) -> List[Circle]:
-    pass
+    # 初始化桶
+    # user
+    bucket_user = Bucket(category=Category.USER, tim = [Tim(name="t1", data=[], border=1)])
+    bucket_user.tim.append(Tim(name="t2", data=[], border=2))
+    bucket_user.tim.append(Tim(name="t3", data=[], border=3))
+
+    # media
+    bucket_media = Bucket(category=Category.MEDIA, tim = [Tim(name="t1", data=[], border=1)])
+    bucket_media.tim.append(Tim(name="t2", data=[], border=2))
+    bucket_media.tim.append(Tim(name="t3", data=[], border=3))
+
+    # expert
+    bucket_expert = Bucket(category=Category.EXPERT, tim = [Tim(name="t1", data=[], border=1)])
+    bucket_expert.tim.append(Tim(name="t2", data=[], border=2))
+    bucket_expert.tim.append(Tim(name="t3", data=[], border=3))
+
+    # 将圆放入对应的桶中
+    for circle in user_circles:
+        bucket_user.add_data_circle(circle)
+    for circle in media_circles:
+        bucket_media.add_data_circle(circle)
+    for circle in expert_circles:
+        bucket_expert.add_data_circle(circle)
+
+   
+
+    # 桶内排序
+    bucket_user.sort_by_circle()
+    bucket_media.sort_by_circle()
+    bucket_expert.sort_by_circle()
+
     
+
+
+     # 打印桶信息,调试
+    print("桶信息:")
+    print(bucket_user)
+    print(bucket_media)
+    print(bucket_expert)
+
 
 
 '''绘制函数,要修改该函数的颜色渲染条件'''
@@ -768,7 +805,20 @@ def draw_circles(circles: List[Circle],
         plt.show()  # 阻塞显示
 
 def main():
-    pass
+    circles = []
+    circles_list = []
+    # 随机生成圆三组
+    for i in range(1, 4):
+        circles_tmp = random_circle(10, 0.1, 0.5)
+        for j in range(len(circles_tmp)):
+            circles_list.append(Circle(r=circles_tmp[j].r, id=i*10+j, category=Category(i), tim=random.uniform(0, 3)))
+        circles.append(circles_list)
+        circles_list = []  # 重置列表
+
+    # print(f"生成的圆:{circles}")
+
+    packing_circle(circles[0], circles[1], circles[2])
+
 
 if __name__ == "__main__":
     
