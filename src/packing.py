@@ -1,16 +1,15 @@
 '''
 作者：夏月华
+日期：2026-2-15
+描述：圆packing算法实现，包含以下主要类和函数：
+- Circle: 圆类，存储圆心坐标、半径、类别、
+- Node: 双向链表节点类
+- Tim: 时间类，将圆按照时间划分，装入类的data中
+- Bucket: 桶类：根据X坐标(time)范围分类管理即将计算的圆
+- BucketManager: 桶管理器：负责将数据分桶、管理所有桶（可以不要了）
 
-
-by_myself 的 Docstring
-
-通过自己理解，写一个packing circle的程序。
-
-算法：
-1、使用循环双向链表实现一个环形链表。
-2、初始化先放三个相切的圆，并放入链表中
-3、遍历前链表，计算得分（通过计算两个圆的加权质心到原点的距离平方）最低的圆对。
-4、通过计算出来的圆对a、b算出第三个圆的坐标，然后更新链表。
+备注：packing_circle函数完成分桶，下一步开始实现第一批前链的创建和堆叠逻辑。
+     绘制函数需要修改颜色渲染条件，以区分不同类别的圆。
 '''
 
 import numpy as np
@@ -70,7 +69,7 @@ class Tim:
         return f"\n{self.name}: 数量={len(self.data)}，数据={self.data}"
 
 class Bucket:
-    '''桶类：根据X坐标(time)范围管理一堆Node
+    '''桶类：根据X坐标(time)范围分类管理即将计算的圆
 
         Bucket{
             t1{
@@ -641,7 +640,7 @@ def packing_circle(user_circles: List[Circle],
     bucket_media.sort_by_circle()
     bucket_expert.sort_by_circle()
 
-    
+
 
 
      # 打印桶信息,调试
