@@ -961,7 +961,7 @@ def draw_circles(buckets: List[Bucket],
             all_circles.extend(tim.data)
     
     if not all_circles:
-        print("没有圆需要绘制")
+        print("no circles to draw")
         return
     
     # 绘制所有圆
@@ -1019,8 +1019,8 @@ def draw_circles(buckets: List[Bucket],
     
     # 设置标题和标签
     ax.set_title(title, fontsize=14, pad=20)
-    ax.set_xlabel('时间轴 →', fontsize=12)
-    ax.set_ylabel('堆积高度', fontsize=12)
+    ax.set_xlabel('time →', fontsize=12)
+    ax.set_ylabel('height →', fontsize=12)
     
     # 添加图例
     legend_elements = []
@@ -1086,7 +1086,7 @@ def main():
     circles_list = []
     # 随机生成圆三组
     for i in range(1, 4):
-        circles_tmp = random_circle(5, 0.01, 0.05)
+        circles_tmp = random_circle(30, 0.01, 0.05)
         for j in range(len(circles_tmp)):
             circles_list.append(Circle(r=circles_tmp[j].r, id=i*10+j, category=Category(i), tim=random.uniform(0, 3)))
         circles.append(circles_list)
